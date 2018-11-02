@@ -1,0 +1,8 @@
+[package]
+name = "sensor-api"
+version = "0.1.0"
+authors = ["scullionw <scuw1801@usherbrooke.ca>"]
+edition = "2018"
+
+[dependencies]
+rocket = "0.4.0-rc.1"
