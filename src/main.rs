@@ -2,47 +2,59 @@
 
 use rocket::request::Form;
 use rocket::{get, routes, FromForm, State};
-use std::sync::Mutex;
+use std::sync::{Mutex, Arc};
+use std::collections::HashMap;
+use std::sync::mpsc::{channel, Sender, Receiver};
+use std::thread;
+use std::net::TcpListener;
+use std::net::TcpStream;
+use std::io::prelude::*;
 
-#[derive(FromForm, Debug)]
-struct User {
-    name: String,
-    account: usize,
+const BUF_SIZE: usize = 1024;
+
+struct ResponseMapper {
+    map: Mutex<HashMap<String, Sender<String>>>,
 }
 
-struct MyConfig {
-    user_val: Mutex<u64>,
+fn send(message: String) {
+    let mut stream = TcpStream::connect("127.0.0.1:8100").unwrap();
+    stream.write(message.as_bytes()).unwrap();
+    stream.flush().unwrap();
 }
 
-#[get("/item?<id>&<user..>")]
-fn item(id: usize, user: Form<User>) -> String {
-    println!("{}", id);
-    user.into_inner().name
-}
-
-#[get("/<name>/<age>")]
-fn hello(name: String, age: u8, state: State<MyConfig>) -> String {
-    let mut data = state.user_val.lock().unwrap();
-    *data += 1;
-    format!("{}: Hello, {} year old named {}!", data, age, name)
-}
-
-#[get("/hello?<name>&<age>")]
-fn hello_query(name: String, age: u8) -> String {
-    format!("Hello, {} year old named {}!", age, name)
-}
-
-#[get("/hello")]
-fn hello_world() -> &'static str {
-    "Hello World!"
+#[get("/<sensorid>/<message>")]
+fn read_sensor(sensorid: String, message: String, state: State<ResponseMapper>) -> String {
+    let (tx, rx) = channel();
+    {
+        let mut map = state.map.lock().unwrap();
+        map.insert(sensorid.clone(), tx);
+    }
+    send(message);
+    let response = rx.recv().unwrap();
+    format!("Message received from {}: {}!", sensorid, response)
 }
 
 fn main() {
-    let config = MyConfig {
-        user_val: Mutex::new(0),
-    };
+    let response_mapper_mbed = Arc::new(ResponseMapper { map: Mutex::new(HashMap::new()) });
+    let response_mapper_rocket = response_mapper_mbed.clone();
+    thread::spawn(move || {
+        let listener = TcpListener::bind("127.0.0.1:8100").unwrap();
+        for stream in listener.incoming() {
+            let mut stream = stream.unwrap();
+            let mut buf = [0; BUF_SIZE];
+            stream.read(&mut buf).unwrap();
+            let data = String::from_utf8_lossy(&buf).to_string();
+            println!("{}", data);
+            response_mapper_mbed.map
+                .lock()
+                .unwrap()
+                .remove(&data)
+                .map(|tx| tx.send(data).unwrap());
+        }
+    });
+
     rocket::ignite()
-        .mount("/", routes![hello, hello_world, hello_query, item])
-        .manage(config)
+        .mount("/", routes![read_sensor])
+        .manage(response_mapper_rocket)
         .launch();
 }
