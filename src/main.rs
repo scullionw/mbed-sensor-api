@@ -2,13 +2,13 @@
 
 use rocket::request::Form;
 use rocket::{get, routes, FromForm, State};
-use std::sync::{Mutex, Arc};
 use std::collections::HashMap;
-use std::sync::mpsc::{channel, Sender, Receiver};
-use std::thread;
+use std::io::prelude::*;
 use std::net::TcpListener;
 use std::net::TcpStream;
-use std::io::prelude::*;
+use std::sync::mpsc::{channel, Receiver, Sender};
+use std::sync::{Arc, Mutex};
+use std::thread;
 
 const BUF_SIZE: usize = 1024;
 
@@ -35,7 +35,9 @@ fn read_sensor(sensorid: String, message: String, state: State<ResponseMapper>) 
 }
 
 fn main() {
-    let response_mapper_mbed = Arc::new(ResponseMapper { map: Mutex::new(HashMap::new()) });
+    let response_mapper_mbed = Arc::new(ResponseMapper {
+        map: Mutex::new(HashMap::new()),
+    });
     let response_mapper_rocket = response_mapper_mbed.clone();
     thread::spawn(move || {
         let listener = TcpListener::bind("127.0.0.1:8100").unwrap();
@@ -45,7 +47,8 @@ fn main() {
             stream.read(&mut buf).unwrap();
             let data = String::from_utf8_lossy(&buf).to_string();
             println!("{}", data);
-            response_mapper_mbed.map
+            response_mapper_mbed
+                .map
                 .lock()
                 .unwrap()
                 .remove(&data)
