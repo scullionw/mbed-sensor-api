@@ -1,39 +1,34 @@
-use std::io::prelude::*;
+use sensor_api::comms;
+use sensor_api::{LISTENER_ADDR, NODE_ADDR};
 use std::net::TcpListener;
 use std::net::TcpStream;
 use std::sync::mpsc::{channel, Receiver, Sender};
 use std::thread;
 
-const BUF_SIZE: usize = 1024;
-
 fn main() {
     let (tx, rx) = channel();
     let handles = vec![
-        thread::spawn(move || node_receiver(tx)),
-        thread::spawn(move || node_sender(rx)),
+        thread::spawn(move || mock_node_receiver(NODE_ADDR, tx)),
+        thread::spawn(move || mock_node_sender(LISTENER_ADDR, rx)),
     ];
     for handle in handles {
         handle.join().unwrap();
     }
 }
 
-fn node_receiver(tx: Sender<String>) {
-    let listener = TcpListener::bind("127.0.0.1:8100").unwrap();
+fn mock_node_receiver(addr: &str, tx: Sender<String>) {
+    let listener = TcpListener::bind(addr).unwrap();
     for stream in listener.incoming() {
-        let mut stream = stream.unwrap();
-        let mut buf = [0; BUF_SIZE];
-        let bytes_read = stream.read(&mut buf).unwrap();
-        let data = String::from_utf8_lossy(&buf[..bytes_read]).to_string();
+        let data = comms::read_string(stream.unwrap());
         println!("RECEIVED: {:?}", &data);
         tx.send(data).unwrap();
     }
 }
 
-fn node_sender(rx: Receiver<String>) {
+fn mock_node_sender(addr: &str, rx: Receiver<String>) {
     for data in rx {
-        let mut stream = TcpStream::connect("127.0.0.1:8200").unwrap();
         println!("SENDING: {:?}", &data);
-        stream.write(data.as_bytes()).unwrap();
-        stream.flush().unwrap();
+        let stream = TcpStream::connect(addr).unwrap();
+        comms::send_string(data, stream);
     }
 }

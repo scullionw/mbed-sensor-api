@@ -1,34 +1,39 @@
 use crate::sensors::SensorMessage;
 use crate::ResponseMap;
+use crate::BUF_SIZE;
 use std::io::prelude::*;
 use std::net::TcpListener;
 use std::net::TcpStream;
 
-const BUF_SIZE: usize = 1024;
-
 pub fn node_listener(addr: &str, response_map: ResponseMap) {
     let listener = TcpListener::bind(addr).unwrap();
     for stream in listener.incoming() {
-        let mut stream = stream.unwrap();
-        let mut buf = [0; BUF_SIZE];
-        let bytes_read = stream.read(&mut buf).unwrap();
-        println!("RECEIVED BUF: {:?}", &buf[..bytes_read]);
-        let data = String::from_utf8_lossy(&buf[..bytes_read]).to_string();
+        let data = read_string(stream.unwrap());
         println!("RECEIVED STRING: {:?}", data);
         let message: SensorMessage = serde_json::from_str(&data).unwrap();
-        response_map
+        if let Some(tx) = response_map
             .lock()
             .unwrap()
             .remove(&message.sensor.sensor_id)
-            .map(|tx| tx.send(data).unwrap());
+        {
+            tx.send(data).unwrap()
+        }
     }
 }
 
 pub fn send_to_node(addr: &str, message: String) {
-    let mut stream = TcpStream::connect(addr).unwrap();
     println!("SENDING STRING: {}", message);
-    let message = message.as_bytes();
-    println!("SENDING BYTES: {:?}", message);
-    stream.write(message).unwrap();
+    let stream = TcpStream::connect(addr).unwrap();
+    send_string(message, stream);
+}
+
+pub fn read_string(mut stream: TcpStream) -> String {
+    let mut buf = [0; BUF_SIZE];
+    let bytes_read = stream.read(&mut buf).unwrap();
+    String::from_utf8_lossy(&buf[..bytes_read]).to_string()
+}
+
+pub fn send_string(data: String, mut stream: TcpStream) {
+    stream.write(data.as_bytes()).unwrap();
     stream.flush().unwrap();
 }

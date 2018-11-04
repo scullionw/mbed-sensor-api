@@ -7,6 +7,15 @@ pub struct Sensor {
     pub sensor_type: SensorType,
 }
 
+impl Sensor {
+    pub fn new(sensor_id: u32, sensor_type: SensorType) -> Sensor {
+        Sensor {
+            sensor_id,
+            sensor_type,
+        }
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug, Hash, Eq, PartialEq, Clone)]
 pub struct SensorMessage {
     pub sensor: Sensor,
