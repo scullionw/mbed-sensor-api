@@ -1,7 +1,7 @@
 #![feature(proc_macro_hygiene, decl_macro)]
 
-mod sensors;
 mod comms;
+mod sensors;
 
 use rocket::{get, routes, State};
 use serde_derive::{Deserialize, Serialize};
