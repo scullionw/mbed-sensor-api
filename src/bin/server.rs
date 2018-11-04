@@ -114,7 +114,7 @@ fn main() {
     thread::spawn(move || comms::node_listener(LISTENER_ADDR, mbed_map));
 
     rocket::ignite()
-        .mount("/", routes![hello, active_sensors, read_sensor])
+        .mount("/", routes![hello, active_sensors, read_sensor, set_as_get_sensor])
         .manage(rocket_map)
         .manage(sensor_list)
         .launch();
