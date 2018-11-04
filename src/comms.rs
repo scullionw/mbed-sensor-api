@@ -34,6 +34,6 @@ pub fn read_string(mut stream: TcpStream) -> String {
 }
 
 pub fn send_string(data: String, mut stream: TcpStream) {
-    stream.write(data.as_bytes()).unwrap();
+    stream.write_all(data.as_bytes()).unwrap();
     stream.flush().unwrap();
 }
