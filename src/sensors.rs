@@ -14,6 +14,23 @@ pub struct SensorMessage {
     pub payload: String,
 }
 
+impl SensorMessage {
+    pub fn get(sensor: Sensor) -> SensorMessage {
+        SensorMessage {
+            sensor,
+            request_type: RequestType::Get,
+            payload: String::new(),
+        }
+    }
+
+    pub fn set(sensor: Sensor, set_val: String) -> SensorMessage {
+        SensorMessage {
+            sensor,
+            request_type: RequestType::Set,
+            payload: set_val,
+        }
+    }
+}
 #[derive(Serialize, Deserialize, Debug, Hash, Eq, PartialEq, Copy, Clone)]
 pub enum RequestType {
     Get,

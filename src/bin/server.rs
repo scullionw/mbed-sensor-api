@@ -1,40 +1,45 @@
 #![feature(proc_macro_hygiene, decl_macro)]
 
-mod comms;
-mod sensors;
-
-use crate::sensors::{RequestType, Sensor, SensorMessage, SensorType};
 use rocket::request::Form;
 use rocket::{get, routes, State};
 use rocket_contrib::json::Json;
-use serde_derive::{Deserialize, Serialize};
+use sensor_api::comms;
+use sensor_api::sensors::Sensor;
+use sensor_api::sensors::{SensorMessage, SensorType};
+use sensor_api::ResponseMap;
+use sensor_api::SensorList;
+use sensor_api::{LISTENER_ADDR, NODE_ADDR};
 use std::collections::{HashMap, HashSet};
-use std::sync::mpsc::{channel, Sender};
+use std::sync::mpsc;
 use std::sync::{Arc, Mutex};
 use std::thread;
 
-const NODE_ADDR: &str = "127.0.0.1:8100";
-const LISTENER_ADDR: &str = "127.0.0.1:8200";
-
-type ResponseMap = Arc<Mutex<HashMap<u32, Sender<String>>>>;
-type SensorList = Arc<Mutex<HashSet<Sensor>>>;
-
 #[get("/sensor?<sensor..>")]
-fn read_sensor(sensor: Form<Sensor>, map: State<ResponseMap>) -> String {
+fn read_sensor(
+    sensor: Form<Sensor>,
+    map: State<ResponseMap>,
+    sensor_list: State<SensorList>,
+) -> Option<String> {
     let sensor = sensor.into_inner();
-    let (tx, rx) = channel();
+
+    if !sensor_list.lock().unwrap().contains(&sensor) {
+        return None;
+    }
+
+    let (tx, rx) = mpsc::channel();
     {
         let mut map = map.lock().unwrap();
         map.insert(sensor.sensor_id, tx);
     }
-    let sensor_message = SensorMessage {
-        sensor,
-        request_type: RequestType::Get,
-        payload: String::new(),
-    };
+
+    let sensor_message = SensorMessage::get(sensor);
+
     comms::send_to_node(NODE_ADDR, serde_json::to_string(&sensor_message).unwrap());
     let response = rx.recv().unwrap();
-    format!("Message received from {}: {}!", sensor.sensor_id, response)
+    Some(format!(
+        "Message received from {}: {}!",
+        sensor.sensor_id, response
+    ))
 }
 
 #[get("/sensors", format = "json")]
@@ -65,7 +70,6 @@ fn main() {
         let mut sensor_list = sensor_list.lock().unwrap();
         sensor_list.insert(sensor_1);
         sensor_list.insert(sensor_2);
-        // println!("{:#?}", sensor_list);
         let sensor_list_json = serde_json::to_string(&*sensor_list).unwrap();
         println!("{}", sensor_list_json);
     }
