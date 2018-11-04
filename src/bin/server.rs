@@ -4,7 +4,7 @@ use rocket::request::Form;
 use rocket::{get, post, routes, State};
 use rocket_contrib::json::Json;
 use sensor_api::comms;
-use sensor_api::sensors::{Sensor, SensorMessage, SensorType};
+use sensor_api::sensors::{RequestType, Sensor, SensorMessage, SensorType};
 use sensor_api::ResponseMap;
 use sensor_api::SensorList;
 use sensor_api::{LISTENER_ADDR, NODE_ADDR};
@@ -57,12 +57,15 @@ fn set_sensor(
     let sensor_message = input.into_inner();
     let sensor = sensor_message.sensor;
     match validate_and_channel(&sensor, &*map, &*sensor_list) {
-        Some(rx) => {
-            comms::send_to_node(NODE_ADDR, serde_json::to_string(&sensor_message).unwrap());
-            let response = rx.recv().unwrap();
-            let sensor_message = serde_json::from_str(&response).unwrap();
-            Some(Json(sensor_message))
-        }
+        Some(rx) => match sensor_message.request_type {
+            RequestType::Set => {
+                comms::send_to_node(NODE_ADDR, serde_json::to_string(&sensor_message).unwrap());
+                let response = rx.recv().unwrap();
+                let sensor_message = serde_json::from_str(&response).unwrap();
+                Some(Json(sensor_message))
+            }
+            _ => None,
+        },
         None => None,
     }
 }
