@@ -1,8 +1,8 @@
+use crate::sensors::SensorMessage;
 use crate::ResponseMap;
 use std::io::prelude::*;
 use std::net::TcpListener;
 use std::net::TcpStream;
-use crate::sensors::SensorMessage;
 
 const BUF_SIZE: usize = 1024;
 
