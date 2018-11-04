@@ -67,7 +67,7 @@ fn set_as_get_sensor(
     sensor_list: State<SensorList>,
 ) -> Option<Json<SensorMessage>> {
     let sensor = sensor.into_inner();
-    match validate_sensor(&sensor, &*map, &*sensor_list) {
+    match validate_and_channel(&sensor, &*map, &*sensor_list) {
         Some(rx) => {
             let sensor_message = SensorMessage::set(sensor, val);
             comms::send_to_node(NODE_ADDR, serde_json::to_string(&sensor_message).unwrap());
