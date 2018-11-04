@@ -39,7 +39,7 @@ impl SensorMessage {
             payload: set_val,
         }
     }
-    
+
     pub fn extract_payload(&self) -> String {
         self.payload.clone()
     }

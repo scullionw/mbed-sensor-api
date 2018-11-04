@@ -18,7 +18,7 @@ fn read_sensor(
     sensor: Form<Sensor>,
     map: State<ResponseMap>,
     sensor_list: State<SensorList>,
-) -> Option<String> {
+) -> Option<Json<SensorMessage>> {
     let sensor = sensor.into_inner();
 
     if !sensor_list.lock().unwrap().contains(&sensor) {
@@ -34,11 +34,12 @@ fn read_sensor(
     let sensor_message = SensorMessage::get(sensor);
     comms::send_to_node(NODE_ADDR, serde_json::to_string(&sensor_message).unwrap());
     let response = rx.recv().unwrap();
-    Some(response)
+    let sensor_message = serde_json::from_str(&response).unwrap();
+    Some(Json(sensor_message))
 }
 
 #[get("/sensors", format = "json")]
-fn sensors(sensor_list: State<SensorList>) -> Json<SensorList> {
+fn active_sensors(sensor_list: State<SensorList>) -> Json<SensorList> {
     Json((*sensor_list).clone())
 }
 
@@ -68,7 +69,7 @@ fn main() {
     thread::spawn(move || comms::node_listener(LISTENER_ADDR, mbed_map));
 
     rocket::ignite()
-        .mount("/", routes![hello, sensors, read_sensor])
+        .mount("/", routes![hello, active_sensors, read_sensor])
         .manage(rocket_map)
         .manage(sensor_list)
         .launch();

@@ -1,6 +1,6 @@
 use sensor_api::comms;
+use sensor_api::sensors::{RequestType, SensorMessage};
 use sensor_api::{LISTENER_ADDR, NODE_ADDR};
-use sensor_api::sensors::{SensorMessage, RequestType};
 use std::net::TcpListener;
 use std::net::TcpStream;
 use std::sync::mpsc::{channel, Receiver, Sender};
@@ -42,4 +42,4 @@ fn mock_mobile_node(data: String) -> String {
     message.replace_payload(new_payload);
     message.change_request_type(RequestType::GetResponse);
     serde_json::to_string(&message).unwrap()
-} 
+}
