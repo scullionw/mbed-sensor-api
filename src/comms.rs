@@ -2,6 +2,7 @@ use crate::ResponseMap;
 use std::io::prelude::*;
 use std::net::TcpListener;
 use std::net::TcpStream;
+use crate::sensors::SensorMessage;
 
 const BUF_SIZE: usize = 1024;
 
@@ -14,17 +15,18 @@ pub fn node_listener(addr: &str, response_map: ResponseMap) {
         println!("RECEIVED BUF: {:?}", &buf[..bytes_read]);
         let data = String::from_utf8_lossy(&buf[..bytes_read]).to_string();
         println!("RECEIVED STRING: {:?}", data);
+        let message: SensorMessage = serde_json::from_str(&data).unwrap();
         response_map
             .lock()
             .unwrap()
-            .remove(&data)
+            .remove(&message.sensor.sensor_id)
             .map(|tx| tx.send(data).unwrap());
     }
 }
 
 pub fn send_to_node(addr: &str, message: String) {
     let mut stream = TcpStream::connect(addr).unwrap();
-    println!("SENDING STRING: {:?}", message);
+    println!("SENDING STRING: {}", message);
     let message = message.as_bytes();
     println!("SENDING BYTES: {:?}", message);
     stream.write(message).unwrap();
