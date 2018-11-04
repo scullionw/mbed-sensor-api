@@ -1,5 +1,6 @@
 use sensor_api::comms;
 use sensor_api::{LISTENER_ADDR, NODE_ADDR};
+use sensor_api::sensors::{SensorMessage, RequestType};
 use std::net::TcpListener;
 use std::net::TcpStream;
 use std::sync::mpsc::{channel, Receiver, Sender};
@@ -8,27 +9,37 @@ use std::thread;
 fn main() {
     let (tx, rx) = channel();
     let handles = vec![
-        thread::spawn(move || mock_node_receiver(NODE_ADDR, tx)),
-        thread::spawn(move || mock_node_sender(LISTENER_ADDR, rx)),
+        thread::spawn(move || mock_fixed_node_receiver(NODE_ADDR, tx)),
+        thread::spawn(move || mock_fixed_node_sender(LISTENER_ADDR, rx)),
     ];
     for handle in handles {
         handle.join().unwrap();
     }
 }
 
-fn mock_node_receiver(addr: &str, tx: Sender<String>) {
+fn mock_fixed_node_receiver(addr: &str, tx: Sender<String>) {
     let listener = TcpListener::bind(addr).unwrap();
     for stream in listener.incoming() {
         let data = comms::read_string(stream.unwrap());
         println!("RECEIVED: {:?}", &data);
-        tx.send(data).unwrap();
+        let sensor_reponse = mock_mobile_node(data);
+        tx.send(sensor_reponse).unwrap();
     }
 }
 
-fn mock_node_sender(addr: &str, rx: Receiver<String>) {
+fn mock_fixed_node_sender(addr: &str, rx: Receiver<String>) {
     for data in rx {
         println!("SENDING: {:?}", &data);
         let stream = TcpStream::connect(addr).unwrap();
         comms::send_string(data, stream);
     }
 }
+
+fn mock_mobile_node(data: String) -> String {
+    let mut message: SensorMessage = serde_json::from_str(&data).unwrap();
+    let mut new_payload = message.extract_payload();
+    new_payload.push_str("MOCK_VALUE");
+    message.replace_payload(new_payload);
+    message.change_request_type(RequestType::GetResponse);
+    serde_json::to_string(&message).unwrap()
+} 

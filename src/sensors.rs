@@ -39,6 +39,18 @@ impl SensorMessage {
             payload: set_val,
         }
     }
+    
+    pub fn extract_payload(&self) -> String {
+        self.payload.clone()
+    }
+
+    pub fn replace_payload(&mut self, new_payload: String) {
+        self.payload = new_payload;
+    }
+
+    pub fn change_request_type(&mut self, t: RequestType) {
+        self.request_type = t;
+    }
 }
 #[derive(Serialize, Deserialize, Debug, Hash, Eq, PartialEq, Copy, Clone)]
 pub enum RequestType {
