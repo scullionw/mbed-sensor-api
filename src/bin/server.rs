@@ -55,13 +55,21 @@ fn set_sensor(
     sensor_list: State<SensorList>,
 ) -> Option<Json<SensorMessage>> {
     let sensor_message = input.into_inner();
-
-    None
+    let sensor = sensor_message.sensor;
+    match validate_and_channel(&sensor, &*map, &*sensor_list) {
+        Some(rx) => {
+            comms::send_to_node(NODE_ADDR, serde_json::to_string(&sensor_message).unwrap());
+            let response = rx.recv().unwrap();
+            let sensor_message = serde_json::from_str(&response).unwrap();
+            Some(Json(sensor_message))
+        }
+        None => None,
+    }
 }
 
-#[get("/sensor?<val>&<sensor..>", format = "json")]
+#[get("/sensor?<set_val>&<sensor..>", format = "json", rank = 2)]
 fn set_as_get_sensor(
-    val: String,
+    set_val: String,
     sensor: Form<Sensor>,
     map: State<ResponseMap>,
     sensor_list: State<SensorList>,
@@ -69,7 +77,7 @@ fn set_as_get_sensor(
     let sensor = sensor.into_inner();
     match validate_and_channel(&sensor, &*map, &*sensor_list) {
         Some(rx) => {
-            let sensor_message = SensorMessage::set(sensor, val);
+            let sensor_message = SensorMessage::set(sensor, set_val);
             comms::send_to_node(NODE_ADDR, serde_json::to_string(&sensor_message).unwrap());
             let response = rx.recv().unwrap();
             let sensor_message = serde_json::from_str(&response).unwrap();
@@ -84,9 +92,9 @@ fn active_sensors(sensor_list: State<SensorList>) -> Json<SensorList> {
     Json((*sensor_list).clone())
 }
 
-#[get("/hello")]
-fn hello() -> &'static str {
-    "Hello World!"
+#[get("/status")]
+fn health() -> &'static str {
+    "Sensor API is up!"
 }
 
 fn initialize_mock_sensors() -> SensorList {
@@ -114,7 +122,16 @@ fn main() {
     thread::spawn(move || comms::node_listener(LISTENER_ADDR, mbed_map));
 
     rocket::ignite()
-        .mount("/", routes![hello, active_sensors, read_sensor, set_as_get_sensor])
+        .mount(
+            "/",
+            routes![
+                health,
+                active_sensors,
+                read_sensor,
+                set_as_get_sensor,
+                set_sensor
+            ],
+        )
         .manage(rocket_map)
         .manage(sensor_list)
         .launch();
