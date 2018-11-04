@@ -1,7 +1,7 @@
 #![feature(proc_macro_hygiene, decl_macro)]
 
 use rocket::request::Form;
-use rocket::{get, routes, State};
+use rocket::{get, post, routes, State};
 use rocket_contrib::json::Json;
 use sensor_api::comms;
 use sensor_api::sensors::{Sensor, SensorMessage, SensorType};
@@ -13,7 +13,7 @@ use std::sync::mpsc::channel;
 use std::sync::{Arc, Mutex};
 use std::thread;
 
-#[get("/sensor?<sensor..>")]
+#[get("/sensor?<sensor..>", format = "json")]
 fn read_sensor(
     sensor: Form<Sensor>,
     map: State<ResponseMap>,
@@ -32,6 +32,43 @@ fn read_sensor(
     }
 
     let sensor_message = SensorMessage::get(sensor);
+    comms::send_to_node(NODE_ADDR, serde_json::to_string(&sensor_message).unwrap());
+    let response = rx.recv().unwrap();
+    let sensor_message = serde_json::from_str(&response).unwrap();
+    Some(Json(sensor_message))
+}
+
+#[post("/sensor", data = "<input>", format = "json")]
+fn set_sensor(
+    input: Json<SensorMessage>,
+    map: State<ResponseMap>,
+    sensor_list: State<SensorList>,
+) -> Option<Json<SensorMessage>> {
+    let sensor_message = input.into_inner();
+    
+    None
+}
+
+#[get("/sensor?<val>&<sensor..>", format = "json")]
+fn set_as_get_sensor(
+    val: String,
+    sensor: Form<Sensor>,
+    map: State<ResponseMap>,
+    sensor_list: State<SensorList>,
+) -> Option<Json<SensorMessage>> {
+    let sensor = sensor.into_inner();
+
+    if !sensor_list.lock().unwrap().contains(&sensor) {
+        return None;
+    }
+
+    let (tx, rx) = channel();
+    {
+        let mut map = map.lock().unwrap();
+        map.insert(sensor.sensor_id, tx);
+    }
+
+    let sensor_message = SensorMessage::set(sensor, val);
     comms::send_to_node(NODE_ADDR, serde_json::to_string(&sensor_message).unwrap());
     let response = rx.recv().unwrap();
     let sensor_message = serde_json::from_str(&response).unwrap();

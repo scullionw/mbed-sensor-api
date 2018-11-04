@@ -37,9 +37,15 @@ fn mock_fixed_node_sender(addr: &str, rx: Receiver<String>) {
 
 fn mock_mobile_node(data: String) -> String {
     let mut message: SensorMessage = serde_json::from_str(&data).unwrap();
-    let mut new_payload = message.extract_payload();
-    new_payload.push_str("MOCK_VALUE");
-    message.replace_payload(new_payload);
+    match message.request_type {
+        RequestType::Get => {
+            let mut new_payload = message.extract_payload();
+            new_payload.push_str("MOCK_SENSOR_VALUE");
+            message.replace_payload(new_payload);
+        }
+        RequestType::Set => println!("New value: {} has been set!", message.extract_payload()),
+        RequestType::GetResponse => unreachable!(),
+    }
     message.change_request_type(RequestType::GetResponse);
     serde_json::to_string(&message).unwrap()
 }
