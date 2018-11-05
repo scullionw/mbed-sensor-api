@@ -34,6 +34,10 @@ impl LinkConfig {
         self.node.address()
     }
     pub fn show(&self) {
-        println!("Node({}) <-------> Listener({})", self.node(), self.listener());
+        println!(
+            "Node({}) <-------> Listener({})",
+            self.node(),
+            self.listener()
+        );
     }
 }
