@@ -1,6 +1,6 @@
 pub mod comms;
-pub mod sensors;
 pub mod config;
+pub mod sensors;
 
 use crate::sensors::Sensor;
 use std::collections::{HashMap, HashSet};

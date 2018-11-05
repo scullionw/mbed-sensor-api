@@ -1,9 +1,8 @@
+use serde_derive::Deserialize;
 use std::fs;
-use std::net::{SocketAddrV4, Ipv4Addr};
-use serde_derive::{Deserialize};
-use std::str::FromStr;
+use std::net::{Ipv4Addr, SocketAddrV4};
 use std::path::Path;
-
+use std::str::FromStr;
 
 #[derive(Deserialize, Debug)]
 pub struct LinkConfig {

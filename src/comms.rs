@@ -2,9 +2,9 @@ use crate::sensors::SensorMessage;
 use crate::ResponseMap;
 use crate::BUF_SIZE;
 use std::io::prelude::*;
+use std::net::SocketAddrV4;
 use std::net::TcpListener;
 use std::net::TcpStream;
-use std::net::SocketAddrV4;
 
 pub fn node_listener(addr: SocketAddrV4, response_map: ResponseMap) {
     let listener = TcpListener::bind(addr).unwrap();

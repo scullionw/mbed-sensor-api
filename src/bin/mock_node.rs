@@ -1,12 +1,12 @@
+use lazy_static::lazy_static;
 use sensor_api::comms;
+use sensor_api::config::LinkConfig;
 use sensor_api::sensors::{RequestType, SensorMessage};
+use std::net::SocketAddrV4;
 use std::net::TcpListener;
 use std::net::TcpStream;
 use std::sync::mpsc::{channel, Receiver, Sender};
 use std::thread;
-use lazy_static::lazy_static;
-use sensor_api::config::LinkConfig;
-use std::net::SocketAddrV4;
 
 lazy_static! {
     static ref CONF: LinkConfig = LinkConfig::from_toml("Nodelink.toml");
