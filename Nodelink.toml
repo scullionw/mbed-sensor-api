@@ -1,0 +1,19 @@
+# Configuration file for mbed Listener and Mock node
+# ie. fixed node microcontroller
+
+# NOTE:
+# API ip address is NOT set here.
+# It is 127.0.0.1:8000 in debug mode (cargo run --bin server)
+# It is 0.0.0.0:8000 (all interfaces) in release mode (cargo run --bin server --release)
+# Port forward 8000 to access over web
+# Use Rocket.toml to modify API address
+
+[listener]
+ip = "127.0.0.1"
+port = 8200
+
+[node]
+ip = "127.0.0.1"
+port = 8100
+
+

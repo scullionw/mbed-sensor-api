@@ -4,8 +4,9 @@ use crate::BUF_SIZE;
 use std::io::prelude::*;
 use std::net::TcpListener;
 use std::net::TcpStream;
+use std::net::SocketAddrV4;
 
-pub fn node_listener(addr: &str, response_map: ResponseMap) {
+pub fn node_listener(addr: SocketAddrV4, response_map: ResponseMap) {
     let listener = TcpListener::bind(addr).unwrap();
     for stream in listener.incoming() {
         let data = read_string(stream.unwrap());
@@ -21,7 +22,7 @@ pub fn node_listener(addr: &str, response_map: ResponseMap) {
     }
 }
 
-pub fn send_to_node(addr: &str, message: String) {
+pub fn send_to_node(addr: SocketAddrV4, message: String) {
     println!("SENDING STRING: {}", message);
     let stream = TcpStream::connect(addr).unwrap();
     send_string(message, stream);

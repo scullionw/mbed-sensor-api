@@ -1,17 +1,22 @@
 #![feature(proc_macro_hygiene, decl_macro)]
 
+use lazy_static::lazy_static;
 use rocket::request::Form;
 use rocket::{get, post, routes, State};
 use rocket_contrib::json::Json;
 use sensor_api::comms;
+use sensor_api::config::LinkConfig;
 use sensor_api::sensors::{RequestType, Sensor, SensorMessage, SensorType};
 use sensor_api::ResponseMap;
 use sensor_api::SensorList;
-use sensor_api::{LISTENER_ADDR, NODE_ADDR};
 use std::collections::{HashMap, HashSet};
 use std::sync::mpsc::{channel, Receiver};
 use std::sync::{Arc, Mutex};
 use std::thread;
+
+lazy_static! {
+    static ref CONF: LinkConfig = LinkConfig::from_toml("Nodelink.toml");
+}
 
 fn validate_and_channel(
     sensor: &Sensor,
@@ -39,7 +44,7 @@ fn read_sensor(
     match validate_and_channel(&sensor, &*map, &*sensor_list) {
         Some(rx) => {
             let sensor_message = SensorMessage::get(sensor);
-            comms::send_to_node(NODE_ADDR, serde_json::to_string(&sensor_message).unwrap());
+            comms::send_to_node(CONF.node(), serde_json::to_string(&sensor_message).unwrap());
             let response = rx.recv().unwrap();
             let sensor_message = serde_json::from_str(&response).unwrap();
             Some(Json(sensor_message))
@@ -59,7 +64,7 @@ fn set_sensor(
     match validate_and_channel(&sensor, &*map, &*sensor_list) {
         Some(rx) => match sensor_message.request_type {
             RequestType::Set => {
-                comms::send_to_node(NODE_ADDR, serde_json::to_string(&sensor_message).unwrap());
+                comms::send_to_node(CONF.node(), serde_json::to_string(&sensor_message).unwrap());
                 let response = rx.recv().unwrap();
                 let sensor_message = serde_json::from_str(&response).unwrap();
                 Some(Json(sensor_message))
@@ -81,7 +86,7 @@ fn set_as_get_sensor(
     match validate_and_channel(&sensor, &*map, &*sensor_list) {
         Some(rx) => {
             let sensor_message = SensorMessage::set(sensor, set_val);
-            comms::send_to_node(NODE_ADDR, serde_json::to_string(&sensor_message).unwrap());
+            comms::send_to_node(CONF.node(), serde_json::to_string(&sensor_message).unwrap());
             let response = rx.recv().unwrap();
             let sensor_message = serde_json::from_str(&response).unwrap();
             Some(Json(sensor_message))
@@ -122,7 +127,7 @@ fn main() {
     let response_map = Arc::new(Mutex::new(HashMap::new()));
     let (rocket_map, mbed_map) = (response_map.clone(), response_map);
 
-    thread::spawn(move || comms::node_listener(LISTENER_ADDR, mbed_map));
+    thread::spawn(move || comms::node_listener(CONF.listener(), mbed_map));
 
     rocket::ignite()
         .mount(

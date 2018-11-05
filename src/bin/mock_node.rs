@@ -1,23 +1,29 @@
 use sensor_api::comms;
 use sensor_api::sensors::{RequestType, SensorMessage};
-use sensor_api::{LISTENER_ADDR, NODE_ADDR};
 use std::net::TcpListener;
 use std::net::TcpStream;
 use std::sync::mpsc::{channel, Receiver, Sender};
 use std::thread;
+use lazy_static::lazy_static;
+use sensor_api::config::LinkConfig;
+use std::net::SocketAddrV4;
+
+lazy_static! {
+    static ref CONF: LinkConfig = LinkConfig::from_toml("Nodelink.toml");
+}
 
 fn main() {
     let (tx, rx) = channel();
     let handles = vec![
-        thread::spawn(move || mock_fixed_node_receiver(NODE_ADDR, tx)),
-        thread::spawn(move || mock_fixed_node_sender(LISTENER_ADDR, rx)),
+        thread::spawn(move || mock_fixed_node_receiver(CONF.node(), tx)),
+        thread::spawn(move || mock_fixed_node_sender(CONF.listener(), rx)),
     ];
     for handle in handles {
         handle.join().unwrap();
     }
 }
 
-fn mock_fixed_node_receiver(addr: &str, tx: Sender<String>) {
+fn mock_fixed_node_receiver(addr: SocketAddrV4, tx: Sender<String>) {
     let listener = TcpListener::bind(addr).unwrap();
     for stream in listener.incoming() {
         let data = comms::read_string(stream.unwrap());
@@ -27,7 +33,7 @@ fn mock_fixed_node_receiver(addr: &str, tx: Sender<String>) {
     }
 }
 
-fn mock_fixed_node_sender(addr: &str, rx: Receiver<String>) {
+fn mock_fixed_node_sender(addr: SocketAddrV4, rx: Receiver<String>) {
     for data in rx {
         println!("SENDING: {:?}", &data);
         let stream = TcpStream::connect(addr).unwrap();
