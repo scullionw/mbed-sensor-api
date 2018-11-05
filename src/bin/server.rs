@@ -122,8 +122,10 @@ fn initialize_mock_sensors() -> SensorList {
 }
 
 fn main() {
-    let sensor_list = initialize_mock_sensors();
+    CONF.show();
 
+    let sensor_list = initialize_mock_sensors();
+    
     let response_map = Arc::new(Mutex::new(HashMap::new()));
     let (rocket_map, mbed_map) = (response_map.clone(), response_map);
 

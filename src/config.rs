@@ -33,4 +33,7 @@ impl LinkConfig {
     pub fn node(&self) -> SocketAddrV4 {
         self.node.address()
     }
+    pub fn show(&self) {
+        println!("Node({}) <-------> Listener({})", self.node(), self.listener());
+    }
 }

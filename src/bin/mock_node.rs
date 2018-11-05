@@ -13,6 +13,7 @@ lazy_static! {
 }
 
 fn main() {
+    CONF.show();
     let (tx, rx) = channel();
     let handles = vec![
         thread::spawn(move || mock_fixed_node_receiver(CONF.node(), tx)),
