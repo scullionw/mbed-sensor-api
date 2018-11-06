@@ -6,7 +6,11 @@ View API usage documentation [here](https://documenter.getpostman.com/view/57967
 
 ## Get latest release
 
-Download release from [here](https://github.com/scullionw/mbed-sensor-api/releases). Download correct binary for your OS.
+1. Download release from [here](https://github.com/scullionw/mbed-sensor-api/releases). Download correct binary for your OS.
+
+2. (Optional) Modify *Rocket.toml* to set API address.
+
+3. (Optional) Modify *Nodelink.toml* to configure link between (mbed_node or mock_node) and api listener.
 
 ## Or build from source..
 
@@ -22,7 +26,7 @@ Download release from [here](https://github.com/scullionw/mbed-sensor-api/releas
 
         $ rustup default nightly
 
-4. (Optional) Modify *Rocket.toml* to set API address
+4. (Optional) Modify *Rocket.toml* to set API address.
 
 5. (Optional) Modify *Nodelink.toml* to configure link between (mbed_node or mock_node) and api listener.
 
