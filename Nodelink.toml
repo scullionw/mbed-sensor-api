@@ -9,9 +9,11 @@
 # Use Rocket.toml to modify API address
 
 [listener]
+bind = "0.0.0.0"
 ip = "127.0.0.1"
 port = 8200
 
 [node]
+bind = "0.0.0.0"
 ip = "127.0.0.1"
 port = 8100

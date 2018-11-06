@@ -44,7 +44,7 @@ fn read_sensor(
     match validate_and_channel(&sensor, &*map, &*sensor_list) {
         Some(rx) => {
             let sensor_message = SensorMessage::get(sensor);
-            comms::send_to_node(CONF.node(), serde_json::to_string(&sensor_message).unwrap());
+            comms::send_to_node(CONF.node().addr(), serde_json::to_string(&sensor_message).unwrap());
             let response = rx.recv().unwrap();
             let sensor_message = serde_json::from_str(&response).unwrap();
             Some(Json(sensor_message))
@@ -64,7 +64,7 @@ fn set_sensor(
     match validate_and_channel(&sensor, &*map, &*sensor_list) {
         Some(rx) => match sensor_message.request_type {
             RequestType::Set => {
-                comms::send_to_node(CONF.node(), serde_json::to_string(&sensor_message).unwrap());
+                comms::send_to_node(CONF.node().addr(), serde_json::to_string(&sensor_message).unwrap());
                 let response = rx.recv().unwrap();
                 let sensor_message = serde_json::from_str(&response).unwrap();
                 Some(Json(sensor_message))
@@ -86,7 +86,7 @@ fn set_as_get_sensor(
     match validate_and_channel(&sensor, &*map, &*sensor_list) {
         Some(rx) => {
             let sensor_message = SensorMessage::set(sensor, set_val);
-            comms::send_to_node(CONF.node(), serde_json::to_string(&sensor_message).unwrap());
+            comms::send_to_node(CONF.node().addr(), serde_json::to_string(&sensor_message).unwrap());
             let response = rx.recv().unwrap();
             let sensor_message = serde_json::from_str(&response).unwrap();
             Some(Json(sensor_message))
@@ -127,7 +127,7 @@ fn main() {
     let response_map = Arc::new(Mutex::new(HashMap::new()));
     let (rocket_map, mbed_map) = (response_map.clone(), response_map);
 
-    thread::spawn(move || comms::node_listener(CONF.listener(), mbed_map));
+    thread::spawn(move || comms::node_listener(CONF.listener().bind_addr(), mbed_map));
 
     rocket::ignite()
         .mount(

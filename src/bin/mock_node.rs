@@ -16,8 +16,8 @@ fn main() {
     CONF.show();
     let (tx, rx) = channel();
     let handles = vec![
-        thread::spawn(move || mock_fixed_node_receiver(CONF.node(), tx)),
-        thread::spawn(move || mock_fixed_node_sender(CONF.listener(), rx)),
+        thread::spawn(move || mock_fixed_node_receiver(CONF.node().bind_addr(), tx)),
+        thread::spawn(move || mock_fixed_node_sender(CONF.listener().addr(), rx)),
     ];
     for handle in handles {
         handle.join().unwrap();

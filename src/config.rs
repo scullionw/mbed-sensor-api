@@ -11,13 +11,17 @@ pub struct LinkConfig {
 }
 
 #[derive(Deserialize, Debug)]
-struct Address {
+pub struct Address {
+    bind: String,
     ip: String,
     port: u16,
 }
 
 impl Address {
-    pub fn address(&self) -> SocketAddrV4 {
+    pub fn bind_addr(&self) -> SocketAddrV4 {
+        SocketAddrV4::new(Ipv4Addr::from_str(&self.bind).unwrap(), self.port)
+    }
+    pub fn addr(&self) -> SocketAddrV4 {
         SocketAddrV4::new(Ipv4Addr::from_str(&self.ip).unwrap(), self.port)
     }
 }
@@ -27,15 +31,15 @@ impl LinkConfig {
         let raw_toml = fs::read_to_string(&path).expect(&format!("{} not found!", &path));
         toml::from_str(&raw_toml).unwrap()
     }
-    pub fn listener(&self) -> SocketAddrV4 {
-        self.listener.address()
+    pub fn listener(&self) -> &Address {
+        &self.listener
     }
-    pub fn node(&self) -> SocketAddrV4 {
-        self.node.address()
+    pub fn node(&self) -> &Address {
+        &self.node
     }
     pub fn show(&self) {
         println!(
-            "Node({}) <-------> Listener({})",
+            "Node({:?}) <---/.../---> Listener({:?})",
             self.node(),
             self.listener()
         );
