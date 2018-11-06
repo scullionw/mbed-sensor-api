@@ -1,6 +1,14 @@
 # Sensor API
 
-## Build from source
+## API Usage
+
+View API usage documentation [here](https://documenter.getpostman.com/view/5796702/RzZ6K1X7).
+
+## Get latest release
+
+Download release from [here](https://github.com/scullionw/mbed-sensor-api/releases). Download correct binary for your OS.
+
+## Or build from source..
 
 1. Install rust
 
@@ -18,7 +26,7 @@
 
 5. (Optional) Modify *Nodelink.toml* to configure link between (mbed_node or mock_node) and api listener.
 
-4. Run
+4. Run ( in directory of *Cargo.toml* )
     
         $ cargo run --bin server --release
 
@@ -26,6 +34,4 @@
 
         $ cargo run --bin mock_node --release
 
-## API Usage
 
-View API usage documentation [here](https://documenter.getpostman.com/view/5796702/RzZ6K1X7).
