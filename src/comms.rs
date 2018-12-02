@@ -15,7 +15,7 @@ pub fn node_listener(addr: SocketAddrV4, response_map: ResponseMap) {
         if let Some(tx) = response_map
             .lock()
             .unwrap()
-            .remove(&message.sensor.sensor_id)
+            .remove(&message.id())
         {
             tx.send(data).unwrap()
         }

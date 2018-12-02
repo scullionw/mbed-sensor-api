@@ -19,15 +19,15 @@ lazy_static! {
 }
 
 fn validate_and_channel(
-    sensor: &Sensor,
+    message: &SensorMessage,
     map: &ResponseMap,
     sensor_list: &SensorList,
 ) -> Option<Receiver<String>> {
-    match sensor_list.lock().unwrap().contains(sensor) {
+    match sensor_list.lock().unwrap().contains(&message.sensor()) {
         true => {
             let (tx, rx) = channel();
             let mut map = map.lock().unwrap();
-            map.insert(sensor.sensor_id, tx);
+            map.insert(message.id(), tx);
             Some(rx)
         }
         false => None,
@@ -41,16 +41,16 @@ fn read_sensor(
     sensor_list: State<SensorList>,
 ) -> Option<Json<SensorMessage>> {
     let sensor = sensor.into_inner();
-    match validate_and_channel(&sensor, &*map, &*sensor_list) {
+    let message = SensorMessage::get(sensor);
+    match validate_and_channel(&message, &*map, &*sensor_list) {
         Some(rx) => {
-            let sensor_message = SensorMessage::get(sensor);
             comms::send_to_node(
                 CONF.node().addr(),
-                serde_json::to_string(&sensor_message).unwrap(),
+                serde_json::to_string(&message).unwrap(),
             );
             let response = rx.recv().unwrap();
-            let sensor_message = serde_json::from_str(&response).unwrap();
-            Some(Json(sensor_message))
+            let message = serde_json::from_str(&response).unwrap();
+            Some(Json(message))
         }
         None => None,
     }
@@ -62,18 +62,17 @@ fn set_sensor(
     map: State<ResponseMap>,
     sensor_list: State<SensorList>,
 ) -> Option<Json<SensorMessage>> {
-    let sensor_message = input.into_inner();
-    let sensor = sensor_message.sensor;
-    match validate_and_channel(&sensor, &*map, &*sensor_list) {
-        Some(rx) => match sensor_message.request_type {
+    let message = input.into_inner();
+    match validate_and_channel(&message, &*map, &*sensor_list) {
+        Some(rx) => match message.request_type {
             RequestType::Set => {
                 comms::send_to_node(
                     CONF.node().addr(),
-                    serde_json::to_string(&sensor_message).unwrap(),
+                    serde_json::to_string(&message).unwrap(),
                 );
                 let response = rx.recv().unwrap();
-                let sensor_message = serde_json::from_str(&response).unwrap();
-                Some(Json(sensor_message))
+                let message = serde_json::from_str(&response).unwrap();
+                Some(Json(message))
             }
             _ => None,
         },
@@ -88,17 +87,16 @@ fn set_as_get_sensor(
     map: State<ResponseMap>,
     sensor_list: State<SensorList>,
 ) -> Option<Json<SensorMessage>> {
-    let sensor = sensor.into_inner();
-    match validate_and_channel(&sensor, &*map, &*sensor_list) {
+    let message = SensorMessage::set(sensor.into_inner(), set_val);
+    match validate_and_channel(&message, &*map, &*sensor_list) {
         Some(rx) => {
-            let sensor_message = SensorMessage::set(sensor, set_val);
             comms::send_to_node(
                 CONF.node().addr(),
-                serde_json::to_string(&sensor_message).unwrap(),
+                serde_json::to_string(&message).unwrap(),
             );
             let response = rx.recv().unwrap();
-            let sensor_message = serde_json::from_str(&response).unwrap();
-            Some(Json(sensor_message))
+            let message = serde_json::from_str(&response).unwrap();
+            Some(Json(message))
         }
         None => None,
     }

@@ -1,14 +1,15 @@
 use rocket::{FromForm, FromFormValue};
 use serde_derive::{Deserialize, Serialize};
+use rand::Rng;
 
 #[derive(Serialize, Deserialize, Debug, Hash, Eq, PartialEq, FromForm, Copy, Clone)]
 pub struct Sensor {
-    pub sensor_id: u32,
+    pub sensor_id: u16,
     pub sensor_type: SensorType,
 }
 
 impl Sensor {
-    pub fn new(sensor_id: u32, sensor_type: SensorType) -> Sensor {
+    pub fn new(sensor_id: u16, sensor_type: SensorType) -> Sensor {
         Sensor {
             sensor_id,
             sensor_type,
@@ -18,7 +19,9 @@ impl Sensor {
 
 #[derive(Serialize, Deserialize, Debug, Hash, Eq, PartialEq, Clone)]
 pub struct SensorMessage {
-    pub sensor: Sensor,
+    pub sensor_id: u16,
+    pub sensor_type: SensorType,
+    pub message_id:  u16,
     pub request_type: RequestType,
     pub payload: String,
 }
@@ -26,7 +29,9 @@ pub struct SensorMessage {
 impl SensorMessage {
     pub fn get(sensor: Sensor) -> SensorMessage {
         SensorMessage {
-            sensor,
+            sensor_id: sensor.sensor_id,
+            message_id: rand::thread_rng().gen(),
+            sensor_type: sensor.sensor_type,
             request_type: RequestType::Get,
             payload: String::new(),
         }
@@ -34,7 +39,9 @@ impl SensorMessage {
 
     pub fn set(sensor: Sensor, set_val: String) -> SensorMessage {
         SensorMessage {
-            sensor,
+            sensor_id: sensor.sensor_id,
+            message_id: rand::thread_rng().gen(),
+            sensor_type: sensor.sensor_type,
             request_type: RequestType::Set,
             payload: set_val,
         }
@@ -51,12 +58,33 @@ impl SensorMessage {
     pub fn change_request_type(&mut self, t: RequestType) {
         self.request_type = t;
     }
+
+    pub fn sensor_id(&self) -> u16 {
+        self.sensor_id
+    }
+
+    pub fn message_id(&self) -> u16 {
+        self.message_id
+    }
+
+    pub fn id(&self) -> (u16, u16) {
+        (self.sensor_id, self.message_id)
+    }
+
+    pub fn sensor(&self) -> Sensor {
+        Sensor {
+            sensor_id: self.sensor_id,
+            sensor_type: self.sensor_type,
+        }
+    }
+
 }
 #[derive(Serialize, Deserialize, Debug, Hash, Eq, PartialEq, Copy, Clone)]
 pub enum RequestType {
     Get,
     GetResponse,
     Set,
+    Discovery,
 }
 
 #[derive(Serialize, Deserialize, Debug, Hash, Eq, PartialEq, FromFormValue, Copy, Clone)]

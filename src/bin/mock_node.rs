@@ -51,7 +51,7 @@ fn mock_mobile_node(data: String) -> String {
             message.replace_payload(new_payload);
         }
         RequestType::Set => println!("New value: {} has been set!", message.extract_payload()),
-        RequestType::GetResponse => unreachable!(),
+        _ => unreachable!(),
     }
     message.change_request_type(RequestType::GetResponse);
     serde_json::to_string(&message).unwrap()
