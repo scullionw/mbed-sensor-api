@@ -44,10 +44,7 @@ fn read_sensor(
     let message = SensorMessage::get(sensor);
     match validate_and_channel(&message, &*map, &*sensor_list) {
         Some(rx) => {
-            comms::send_to_node(
-                CONF.node().addr(),
-                serde_json::to_string(&message).unwrap(),
-            );
+            comms::send_to_node(CONF.node().addr(), serde_json::to_string(&message).unwrap());
             let response = rx.recv().unwrap();
             let message = serde_json::from_str(&response).unwrap();
             Some(Json(message))
@@ -66,10 +63,7 @@ fn set_sensor(
     match validate_and_channel(&message, &*map, &*sensor_list) {
         Some(rx) => match message.request_type {
             RequestType::Set => {
-                comms::send_to_node(
-                    CONF.node().addr(),
-                    serde_json::to_string(&message).unwrap(),
-                );
+                comms::send_to_node(CONF.node().addr(), serde_json::to_string(&message).unwrap());
                 let response = rx.recv().unwrap();
                 let message = serde_json::from_str(&response).unwrap();
                 Some(Json(message))
@@ -90,10 +84,7 @@ fn set_as_get_sensor(
     let message = SensorMessage::set(sensor.into_inner(), set_val);
     match validate_and_channel(&message, &*map, &*sensor_list) {
         Some(rx) => {
-            comms::send_to_node(
-                CONF.node().addr(),
-                serde_json::to_string(&message).unwrap(),
-            );
+            comms::send_to_node(CONF.node().addr(), serde_json::to_string(&message).unwrap());
             let response = rx.recv().unwrap();
             let message = serde_json::from_str(&response).unwrap();
             Some(Json(message))
@@ -132,9 +123,10 @@ fn main() {
     CONF.show();
     let sensor_list = initialize_mock_sensors();
     let response_map = Arc::new(Mutex::new(HashMap::new()));
+    let (rocket_list, mbed_list) = (sensor_list.clone(), sensor_list);
     let (rocket_map, mbed_map) = (response_map.clone(), response_map);
 
-    thread::spawn(move || comms::node_listener(CONF.listener().bind_addr(), mbed_map));
+    thread::spawn(move || comms::node_listener(CONF.listener().bind_addr(), mbed_map, mbed_list));
 
     rocket::ignite()
         .mount(
@@ -148,6 +140,6 @@ fn main() {
             ],
         )
         .manage(rocket_map)
-        .manage(sensor_list)
+        .manage(rocket_list)
         .launch();
 }

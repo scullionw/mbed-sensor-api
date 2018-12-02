@@ -1,6 +1,6 @@
+use rand::Rng;
 use rocket::{FromForm, FromFormValue};
 use serde_derive::{Deserialize, Serialize};
-use rand::Rng;
 
 #[derive(Serialize, Deserialize, Debug, Hash, Eq, PartialEq, FromForm, Copy, Clone)]
 pub struct Sensor {
@@ -21,7 +21,7 @@ impl Sensor {
 pub struct SensorMessage {
     pub sensor_id: u16,
     pub sensor_type: SensorType,
-    pub message_id:  u16,
+    pub message_id: u16,
     pub request_type: RequestType,
     pub payload: String,
 }
@@ -77,7 +77,6 @@ impl SensorMessage {
             sensor_type: self.sensor_type,
         }
     }
-
 }
 #[derive(Serialize, Deserialize, Debug, Hash, Eq, PartialEq, Copy, Clone)]
 pub enum RequestType {
