@@ -28,7 +28,7 @@ impl Address {
 
 impl LinkConfig {
     pub fn from_toml<P: AsRef<Path> + std::fmt::Display>(path: P) -> LinkConfig {
-        let raw_toml = fs::read_to_string(&path).expect(&format!("{} not found!", &path));
+        let raw_toml = fs::read_to_string(&path).unwrap_or_else(|_| panic!("{} not found!", &path));
         toml::from_str(&raw_toml).unwrap()
     }
     pub fn listener(&self) -> &Address {
