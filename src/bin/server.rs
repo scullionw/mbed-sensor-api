@@ -96,11 +96,11 @@ fn set_as_get_sensor(
     }
 }
 
-#[get("/sensors")]
+#[get("/sensors", format = "json")]
 fn active_sensors(sensor_list: State<SensorList>) -> Json<SensorList> {
     Json((*sensor_list).clone())
 }
-#[get("/polled_sensors")]
+#[get("/polled_sensors", format = "json")]
 fn polled_sensors(sensor_list: State<SensorList>) -> Json<HashSet<Sensor>> {
     let mut sensor_list = sensor_list.lock().unwrap().clone();
     sensor_list.retain(|&s| s.polled());
