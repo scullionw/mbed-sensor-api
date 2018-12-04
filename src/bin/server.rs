@@ -96,9 +96,15 @@ fn set_as_get_sensor(
     }
 }
 
-#[get("/sensors", format = "json")]
+#[get("/sensors")]
 fn active_sensors(sensor_list: State<SensorList>) -> Json<SensorList> {
     Json((*sensor_list).clone())
+}
+#[get("/polled_sensors")]
+fn polled_sensors(sensor_list: State<SensorList>) -> Json<HashSet<Sensor>> {
+    let mut sensor_list = sensor_list.lock().unwrap().clone();
+    sensor_list.retain(|&s| s.polled());
+    Json(sensor_list)
 }
 
 
@@ -146,21 +152,7 @@ fn timeseries(sensor: Form<Sensor>, sensor_list: State<SensorList>) -> Json<Vec<
     Json(data)
 }
 
-#[get("/view")]
-fn polled_sensors(sensor_list: State<SensorList>) -> Html<String> {
-    let mut res = String::new();
-    res.push_str(r#"<!DOCTYPE html><html><body>"#);
 
-    let sl = &*sensor_list.lock().unwrap();
-    for s in sl {
-        if s.sensor_type == SensorType::Thermometer {
-            res.push_str(r#"<p><a href="https://www.w3.org/">Link</a> to view graph.</p>"#)
-        }
-    }
-
-    res.push_str(r#"</body></html>"#);
-    Html(res)
-}
 
 #[get("/status")]
 fn health() -> &'static str {
@@ -173,6 +165,10 @@ fn initialize_mock_sensors() -> SensorList {
         Sensor::new(2, SensorType::Lock),
         Sensor::new(3, SensorType::Thermometer),
         Sensor::new(4, SensorType::Thermometer),
+        Sensor::new(5, SensorType::SmartSwitch),
+        Sensor::new(6, SensorType::Thermostat),
+        Sensor::new(7, SensorType::MusicPlayer),
+        Sensor::new(8, SensorType::Store),
     ];
     let sensor_list = Arc::new(Mutex::new(HashSet::new()));
     {

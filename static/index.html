@@ -1,25 +1,47 @@
 <!DOCTYPE html>
 <html>
-    <head>
-        <meta charset="utf-8">
-            <title>Timeseries view</title>
-            <meta name="viewport" content="width=device-width,initial-scale=1.0">
-            <link rel="stylesheet" href="plot.css">
-    </head>
 
-    <body>
-        <svg width="960" height="500"></svg>
-        <script src="https://d3js.org/d3.v4.min.js"></script>
-        <script src="timeplot.js"></script>
-        <script>
+<head>
+    <meta charset="utf-8">
+    <title>Timeseries view</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <link rel="stylesheet" href="plot.css">
+</head>
 
-            fetch('http://localhost:8000/sensors')
-            .then(response. => response.json())
-            .then(function(){
-                
-            };
-            fetch('http://localhost:8000/timeseries?&sensor_id=" + id + "&sensor_type=Thermometer')
-                .then(response => response.json())
-                .then(response => draw(response))
-        </script>
+<body>
+    <svg width="960" height="500"></svg>
+    <script src="https://d3js.org/d3.v4.min.js"></script>
+    <script src="timeplot.js"></script>
+    <script>
+
+        var user;
+        function choose(choice) {
+            user = choice;
+        }
+
+        function test(click) {
+            alert("You chossed " + user);
+        }
+
+        fetch('http://localhost:8000/polled_sensors')
+            .then(response => response.json())
+            .then(x => {
+                console.log(x)
+            })
+
+        fetch('http://localhost:8000/timeseries?&sensor_id=" + id + "&sensor_type=Thermometer')
+            .then(response => response.json())
+            .then(response => draw(response))
+    </script>
+
+    <div id="game">
+        <button onClick="choose('rock')">Rock</button>
+        <button onClick="choose('paper')">Paper</button>
+        <button onClick="choose('scissors')">Scissors</button>
+        <div id="result"></div>
+        <br>
+        <br>
+        <button onClick="test()">DEBUG</button>
+    </div>
+
 </html>

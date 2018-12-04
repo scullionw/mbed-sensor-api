@@ -15,6 +15,13 @@ impl Sensor {
             sensor_type,
         }
     }
+
+    pub fn polled(&self) -> bool {
+        match self.sensor_type {
+            SensorType::Thermometer => true,
+            _ => false
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug, Hash, Eq, PartialEq, Clone)]
