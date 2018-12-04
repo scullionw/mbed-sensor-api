@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+            <title>Timeseries view</title>
+            <meta name="viewport" content="width=device-width,initial-scale=1.0">
+            <link rel="stylesheet" href="plot.css">
+    </head>
+
+    <body>
+        <svg width="960" height="500"></svg>
+        <script src="https://d3js.org/d3.v4.min.js"></script>
+        <script src="timeplot.js"></script>
+        <script>
+
+            fetch('http://localhost:8000/sensors')
+            .then(response. => response.json())
+            .then(function(){
+                
+            };
+            fetch('http://localhost:8000/timeseries?&sensor_id=" + id + "&sensor_type=Thermometer')
+                .then(response => response.json())
+                .then(response => draw(response))
+        </script>
+</html>

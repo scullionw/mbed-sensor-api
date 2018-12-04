@@ -4,6 +4,8 @@ use lazy_static::lazy_static;
 use rocket::request::Form;
 use rocket::{get, post, routes, State};
 use rocket_contrib::json::Json;
+use rocket_contrib::serve::StaticFiles;
+use rocket::response::content::Html;
 use sensor_api::comms;
 use sensor_api::config::LinkConfig;
 use sensor_api::sensors::{RequestType, Sensor, SensorMessage, SensorType};
@@ -13,6 +15,7 @@ use std::collections::{HashMap, HashSet};
 use std::sync::mpsc::{channel, Receiver};
 use std::sync::{Arc, Mutex};
 use std::thread;
+use sensor_api::timeseries::Year;
 
 lazy_static! {
     static ref CONF: LinkConfig = LinkConfig::from_toml("Nodelink.toml");
@@ -98,6 +101,67 @@ fn active_sensors(sensor_list: State<SensorList>) -> Json<SensorList> {
     Json((*sensor_list).clone())
 }
 
+
+#[get("/sensor?<sensor..>", format = "json")]
+fn other(
+    sensor: Form<Sensor>,
+    map: State<ResponseMap>,
+    sensor_list: State<SensorList>,
+) -> Option<Json<SensorMessage>> {
+    let sensor = sensor.into_inner();
+    let message = SensorMessage::get(sensor);
+    match validate_and_channel(&message, &*map, &*sensor_list) {
+        Some(rx) => {
+            comms::send_to_node(CONF.node().addr(), serde_json::to_string(&message).unwrap());
+            let response = rx.recv().unwrap();
+            let message = serde_json::from_str(&response).unwrap();
+            Some(Json(message))
+        }
+        None => None,
+    }
+}
+#[get("/timeseries?<sensor..>", format = "json")]
+fn timeseries(sensor: Form<Sensor>, sensor_list: State<SensorList>) -> Json<Vec<Year>> {
+    let sensor = sensor.into_inner();
+    // if (&*sensor_list).lock().unwrap().contains(&sensor) {
+
+    // }
+
+    let data = vec![
+        Year::new(2005, 771900),
+        Year::new(2006, 771500),
+        Year::new(2007, 770500),
+        Year::new(2008, 770400),
+        Year::new(2009, 771000),
+        Year::new(2010, 772400),
+        Year::new(2011, 774100),
+        Year::new(2012, 776700),
+        Year::new(2013, 777100),
+        Year::new(2014, 779200),
+        Year::new(2015, 782300),
+    ];
+
+
+
+    Json(data)
+}
+
+#[get("/view")]
+fn polled_sensors(sensor_list: State<SensorList>) -> Html<String> {
+    let mut res = String::new();
+    res.push_str(r#"<!DOCTYPE html><html><body>"#);
+
+    let sl = &*sensor_list.lock().unwrap();
+    for s in sl {
+        if s.sensor_type == SensorType::Thermometer {
+            res.push_str(r#"<p><a href="https://www.w3.org/">Link</a> to view graph.</p>"#)
+        }
+    }
+
+    res.push_str(r#"</body></html>"#);
+    Html(res)
+}
+
 #[get("/status")]
 fn health() -> &'static str {
     "Sensor API is up!"
@@ -107,6 +171,8 @@ fn initialize_mock_sensors() -> SensorList {
     let sensors = vec![
         Sensor::new(1, SensorType::Light),
         Sensor::new(2, SensorType::Lock),
+        Sensor::new(3, SensorType::Thermometer),
+        Sensor::new(4, SensorType::Thermometer),
     ];
     let sensor_list = Arc::new(Mutex::new(HashSet::new()));
     {
@@ -136,9 +202,12 @@ fn main() {
                 active_sensors,
                 read_sensor,
                 set_as_get_sensor,
-                set_sensor
+                set_sensor,
+                polled_sensors,
+                timeseries
             ],
         )
+        .mount("/", StaticFiles::from("static"))
         .manage(rocket_map)
         .manage(rocket_list)
         .launch();

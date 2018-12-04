@@ -1,6 +1,7 @@
 pub mod comms;
 pub mod config;
 pub mod sensors;
+pub mod timeseries;
 
 use crate::sensors::Sensor;
 use std::collections::{HashMap, HashSet};
