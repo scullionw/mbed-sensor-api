@@ -16,14 +16,12 @@ lazy_static! {
 }
 
 struct SensorMemory {
-    pub target_value: String,
     pub sensor_value: String,
 }
 
 impl SensorMemory {
-    fn new(target_value: String, sensor_value: String) -> SensorMemory {
+    fn new(sensor_value: String) -> SensorMemory {
         SensorMemory {
-            target_value,
             sensor_value,
         }
     }
@@ -55,9 +53,15 @@ fn discovery(addr: SocketAddrV4, sensor_list: &SensorList) {
 fn mock_fixed_node_receiver(addr: SocketAddrV4, tx: Sender<String>, sensor_list: &SensorList) {
     let mut memory_map = HashMap::new();
     for s in &*sensor_list.lock().unwrap() {
+        let sensor = s.clone();
+        let mem = match sensor.sensor_type {
+            SensorType::Thermometer |
+            SensorType::Thermostat => SensorMemory::new("23".to_owned()),
+            _ => SensorMemory::new("Off".to_owned())
+        };
         memory_map.insert(
-            s.clone(),
-            SensorMemory::new(String::new(), "DEFAULT_VALUE".to_owned()),
+            sensor,
+            mem
         );
     }
 
