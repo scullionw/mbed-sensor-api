@@ -5,17 +5,16 @@ use rocket::request::Form;
 use rocket::{get, post, routes, State};
 use rocket_contrib::json::Json;
 use rocket_contrib::serve::StaticFiles;
-use rocket::response::content::Html;
 use sensor_api::comms;
 use sensor_api::config::LinkConfig;
 use sensor_api::sensors::{RequestType, Sensor, SensorMessage, SensorType};
+use sensor_api::timeseries::Year;
 use sensor_api::ResponseMap;
 use sensor_api::SensorList;
 use std::collections::{HashMap, HashSet};
 use std::sync::mpsc::{channel, Receiver};
 use std::sync::{Arc, Mutex};
 use std::thread;
-use sensor_api::timeseries::Year;
 
 lazy_static! {
     static ref CONF: LinkConfig = LinkConfig::from_toml("Nodelink.toml");
@@ -107,27 +106,8 @@ fn polled_sensors(sensor_list: State<SensorList>) -> Json<HashSet<Sensor>> {
     Json(sensor_list)
 }
 
-
-#[get("/sensor?<sensor..>", format = "json")]
-fn other(
-    sensor: Form<Sensor>,
-    map: State<ResponseMap>,
-    sensor_list: State<SensorList>,
-) -> Option<Json<SensorMessage>> {
-    let sensor = sensor.into_inner();
-    let message = SensorMessage::get(sensor);
-    match validate_and_channel(&message, &*map, &*sensor_list) {
-        Some(rx) => {
-            comms::send_to_node(CONF.node().addr(), serde_json::to_string(&message).unwrap());
-            let response = rx.recv().unwrap();
-            let message = serde_json::from_str(&response).unwrap();
-            Some(Json(message))
-        }
-        None => None,
-    }
-}
 #[get("/timeseries?<sensor..>", format = "json")]
-fn timeseries(sensor: Form<Sensor>, sensor_list: State<SensorList>) -> Json<Vec<Year>> {
+fn timeseries(sensor: Form<Sensor>, _sensor_list: State<SensorList>) -> Json<Vec<Year>> {
     let sensor = sensor.into_inner();
     // if (&*sensor_list).lock().unwrap().contains(&sensor) {
 
@@ -147,12 +127,8 @@ fn timeseries(sensor: Form<Sensor>, sensor_list: State<SensorList>) -> Json<Vec<
         Year::new(2015, 782300),
     ];
 
-
-
     Json(data)
 }
-
-
 
 #[get("/status")]
 fn health() -> &'static str {

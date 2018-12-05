@@ -19,7 +19,7 @@ impl Sensor {
     pub fn polled(&self) -> bool {
         match self.sensor_type {
             SensorType::Thermometer => true,
-            _ => false
+            _ => false,
         }
     }
 }
@@ -95,11 +95,11 @@ pub enum RequestType {
 
 #[derive(Serialize, Deserialize, Debug, Hash, Eq, PartialEq, FromFormValue, Copy, Clone)]
 pub enum SensorType {
-    Thermometer,
-    Light,
-    SmartSwitch,
-    Thermostat,
-    MusicPlayer,
-    Store,
-    Lock,
+    Thermometer, // float
+    Light,       // On-Off
+    SmartSwitch, // On-Off
+    Thermostat,  // float
+    MusicPlayer, // On-Off (play pause next prev volume)
+    Store,       // Up-Down (On-off)
+    Lock,        // Locked-Unlocked (On-off)
 }

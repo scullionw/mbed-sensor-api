@@ -1,7 +1,7 @@
 use lazy_static::lazy_static;
 use sensor_api::comms;
 use sensor_api::config::LinkConfig;
-use sensor_api::sensors::{RequestType, SensorMessage};
+use sensor_api::sensors::{RequestType, SensorMessage, SensorType};
 use std::net::SocketAddrV4;
 use std::net::TcpListener;
 use std::net::TcpStream;
@@ -48,6 +48,10 @@ fn mock_mobile_node(data: String) -> String {
         RequestType::Get => {
             let mut new_payload = message.extract_payload();
             new_payload.push_str("MOCK_SENSOR_VALUE");
+            let new_payload = match message.sensor_type {
+                SensorType::Thermometer | SensorType::Thermostat => "25.1".to_owned(),
+                _ => "Off".to_owned(),
+            };
             message.replace_payload(new_payload);
         }
         RequestType::Set => println!("New value: {} has been set!", message.extract_payload()),
