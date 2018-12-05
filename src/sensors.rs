@@ -22,6 +22,16 @@ impl Sensor {
             _ => false,
         }
     }
+
+    pub fn discovery(&self) -> SensorMessage {
+        SensorMessage {
+            sensor_id: self.sensor_id,
+            message_id: rand::thread_rng().gen(),
+            sensor_type: self.sensor_type,
+            request_type: RequestType::Discovery,
+            payload: String::new(),
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug, Hash, Eq, PartialEq, Clone)]

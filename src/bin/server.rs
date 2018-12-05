@@ -135,32 +135,9 @@ fn health() -> &'static str {
     "Sensor API is up!"
 }
 
-fn initialize_mock_sensors() -> SensorList {
-    let sensors = vec![
-        Sensor::new(1, SensorType::Light),
-        Sensor::new(2, SensorType::Lock),
-        Sensor::new(3, SensorType::Thermometer),
-        Sensor::new(4, SensorType::Thermometer),
-        Sensor::new(5, SensorType::SmartSwitch),
-        Sensor::new(6, SensorType::Thermostat),
-        Sensor::new(7, SensorType::MusicPlayer),
-        Sensor::new(8, SensorType::Store),
-        Sensor::new(9, SensorType::Thermometer),
-    ];
-    let sensor_list = Arc::new(Mutex::new(HashSet::new()));
-    {
-        let mut sensor_list = sensor_list.lock().unwrap();
-        for sensor in sensors {
-            sensor_list.insert(sensor);
-        }
-        println!("{}", serde_json::to_string(&*sensor_list).unwrap());
-    }
-    sensor_list
-}
-
 fn main() {
     CONF.show();
-    let sensor_list = initialize_mock_sensors();
+    let sensor_list = Arc::new(Mutex::new(HashSet::new()));
     let response_map = Arc::new(Mutex::new(HashMap::new()));
     let (rocket_list, mbed_list) = (sensor_list.clone(), sensor_list);
     let (rocket_map, mbed_map) = (response_map.clone(), response_map);
