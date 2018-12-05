@@ -10,46 +10,38 @@
 
 <body>
     <div id="buttons"></div>
-    <div id="graph"><svg width="960" height="500"></svg></div>
-    
-    
-    <script src="https://d3js.org/d3.v4.min.js"></script>
+    <div id="chart0"></div>
+    <div id="chart1"></div>
+
+
+    <!-- Step 1) Load D3.js -->
+    <script src="https://d3js.org/d3.v5.min.js"></script>
+
+    <!-- Step 2) Load billboard.js with style -->
+    <script src="billboard.js"></script>
+
+    <!-- Load with base style -->
+    <!-- <link rel="stylesheet" href="billboard.css"> -->
+
+    <!-- Or load different theme style -->
+    <link rel="stylesheet" href="insight.css">
     <script src="timeplot.js"></script>
 
     <script>
-        function graph(sensor_id, sensor_type) {
+        function graph(i, sensor_id, sensor_type) {
             fetch('http://localhost:8000/timeseries?&sensor_id=' + sensor_id + '&sensor_type=' + sensor_type)
                 .then(response => response.json())
-                .then(response => draw(response))
+                .then(json_data => draw("#chart" + i, json_data))
         }
-
-        function create_buttons(sensors) {
-            console.log(sensors)
-            var body = document.getElementsByTagName("body")[0];
-            for (var i = 0; i < sensors.length; i++) {
-                const sensor_id = sensors[i]["sensor_id"];
-                const sensor_type = sensors[i]["sensor_type"];
-                var buttons = document.createElement("button");
-                buttons.innerHTML = "Sensor " + i;
-                buttons.setAttribute('class', 'sensorbutton');
-                buttons.setAttribute('id', sensor_id);
-                buttons.setAttribute('value', "" + i);
-                buttons.style.color = "green";
-                buttons.style.background = "black";
-                buttons.style.boxShadow = "50%"
-                buttons.onclick = function fun() {
-                    graph(sensor_id, sensor_type);
-                }
-
-                document.getElementById("buttons").appendChild(buttons);
-            }
-        }
-
 
         fetch('http://localhost:8000/polled_sensors')
             .then(response => response.json())
             .then(sensors => {
-                create_buttons(sensors)
+                for (var i = 0; i < sensors.length; i++) {
+                    const sensor_id = sensors[i]["sensor_id"];
+                    const sensor_type = sensors[i]["sensor_type"];
+                    graph(i, sensor_id, sensor_type);
+                }
             })
     </script>
 
