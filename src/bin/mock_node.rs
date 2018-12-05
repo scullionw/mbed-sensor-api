@@ -45,7 +45,7 @@ fn main() {
 
 fn discovery(addr: SocketAddrV4, sensor_list: &SensorList) {
     for s in &*sensor_list.lock().unwrap() {
-        let stream = TcpStream::connect(addr).unwrap();
+        let stream = TcpStream::connect(addr).expect("PLEASE START SERVER BEFORE MOCK_NODE");
         let discovery_message = s.discovery();
         let discovery_message = serde_json::to_string(&discovery_message).unwrap();
         comms::send_string(discovery_message, stream);
