@@ -169,6 +169,7 @@ fn initialize_mock_sensors() -> SensorList {
         Sensor::new(6, SensorType::Thermostat),
         Sensor::new(7, SensorType::MusicPlayer),
         Sensor::new(8, SensorType::Store),
+        Sensor::new(9, SensorType::Thermometer),
     ];
     let sensor_list = Arc::new(Mutex::new(HashSet::new()));
     {
