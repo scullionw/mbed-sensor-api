@@ -134,7 +134,7 @@ fn timeseries(sensor: Form<Sensor>, sensor_list: State<SensorList>) -> Json<Vec<
     // }
 
     let data = vec![
-        Year::new(2005, 771900),
+        Year::new(2005, 771900 + sensor.sensor_id as u32),
         Year::new(2006, 771500),
         Year::new(2007, 770500),
         Year::new(2008, 770400),

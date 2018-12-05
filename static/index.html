@@ -9,39 +9,48 @@
 </head>
 
 <body>
-    <svg width="960" height="500"></svg>
+    <div id="buttons"></div>
+    <div id="graph"><svg width="960" height="500"></svg></div>
+    
+    
     <script src="https://d3js.org/d3.v4.min.js"></script>
     <script src="timeplot.js"></script>
+
     <script>
-
-        var user;
-        function choose(choice) {
-            user = choice;
+        function graph(sensor_id, sensor_type) {
+            fetch('http://localhost:8000/timeseries?&sensor_id=' + sensor_id + '&sensor_type=' + sensor_type)
+                .then(response => response.json())
+                .then(response => draw(response))
         }
 
-        function test(click) {
-            alert("You chossed " + user);
+        function create_buttons(sensors) {
+            console.log(sensors)
+            var body = document.getElementsByTagName("body")[0];
+            for (var i = 0; i < sensors.length; i++) {
+                const sensor_id = sensors[i]["sensor_id"];
+                const sensor_type = sensors[i]["sensor_type"];
+                var buttons = document.createElement("button");
+                buttons.innerHTML = "Sensor " + i;
+                buttons.setAttribute('class', 'sensorbutton');
+                buttons.setAttribute('id', sensor_id);
+                buttons.setAttribute('value', "" + i);
+                buttons.style.color = "green";
+                buttons.style.background = "black";
+                buttons.style.boxShadow = "50%"
+                buttons.onclick = function fun() {
+                    graph(sensor_id, sensor_type);
+                }
+
+                document.getElementById("buttons").appendChild(buttons);
+            }
         }
+
 
         fetch('http://localhost:8000/polled_sensors')
             .then(response => response.json())
-            .then(x => {
-                console.log(x)
+            .then(sensors => {
+                create_buttons(sensors)
             })
-
-        fetch('http://localhost:8000/timeseries?&sensor_id=" + id + "&sensor_type=Thermometer')
-            .then(response => response.json())
-            .then(response => draw(response))
     </script>
-
-    <div id="game">
-        <button onClick="choose('rock')">Rock</button>
-        <button onClick="choose('paper')">Paper</button>
-        <button onClick="choose('scissors')">Scissors</button>
-        <div id="result"></div>
-        <br>
-        <br>
-        <button onClick="test()">DEBUG</button>
-    </div>
 
 </html>
