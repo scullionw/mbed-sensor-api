@@ -37,7 +37,10 @@ pub fn rate_limited_sender(rx: Receiver<(String, SocketAddrV4)>) {
         println!("SENDING STRING: {}", message);
         let stream = TcpStream::connect(addr).unwrap();
         send_string(message, stream);
-        std::thread::sleep(std::time::Duration::from_millis(500));
+        let t = 2000;
+        println!("LIMITER WAITING {} ms.", t);
+        std::thread::sleep(std::time::Duration::from_millis(t));
+        println!("LIMITER READY!");
     }
 }
 
