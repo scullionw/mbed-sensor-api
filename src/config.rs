@@ -8,6 +8,12 @@ use std::str::FromStr;
 pub struct LinkConfig {
     listener: Address,
     node: Address,
+    time_limiter: Limiter,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct Limiter {
+    time: u64
 }
 
 #[derive(Deserialize, Debug)]
@@ -43,5 +49,8 @@ impl LinkConfig {
             self.node(),
             self.listener()
         );
+    }
+    pub fn time(&self) -> u64 {
+        self.time_limiter.time
     }
 }

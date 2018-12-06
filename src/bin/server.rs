@@ -16,9 +16,21 @@ use std::sync::mpsc::{channel, Receiver, Sender};
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::net::SocketAddrV4;
+use std::net::TcpStream;
 
 lazy_static! {
     static ref CONF: LinkConfig = LinkConfig::from_toml("Nodelink.toml");
+}
+
+pub fn rate_limited_sender(rx: Receiver<(String, SocketAddrV4)>) {
+    for (message, addr) in rx {
+        println!("SENDING STRING: {}", message);
+        let stream = TcpStream::connect(addr).unwrap();
+        comms::send_string(message, stream);
+        println!("LIMITER WAITING {} ms.", CONF.time());
+        std::thread::sleep(std::time::Duration::from_millis(CONF.time()));
+        println!("LIMITER READY!");
+    }
 }
 
 pub type Xmitter = Arc<Mutex<Sender<(String, SocketAddrV4)>>>;
@@ -153,7 +165,7 @@ fn main() {
     let (tx_lim, rx_lim) = channel();
 
     thread::spawn(move || comms::node_listener(CONF.listener().bind_addr(), mbed_map, mbed_list));
-    thread::spawn(move || comms::rate_limited_sender(rx_lim));
+    thread::spawn(move || rate_limited_sender(rx_lim));
 
     rocket::ignite()
         .mount(

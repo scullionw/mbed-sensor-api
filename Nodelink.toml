@@ -17,3 +17,6 @@ port = 8200
 bind = "0.0.0.0"
 ip = "127.0.0.1"
 port = 8100
+
+[time_limiter]
+time = 5000

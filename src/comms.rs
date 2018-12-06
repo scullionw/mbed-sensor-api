@@ -32,18 +32,6 @@ pub fn node_listener(addr: SocketAddrV4, response_map: ResponseMap, sensor_list:
 
 use std::sync::mpsc::{Sender, Receiver};
 
-pub fn rate_limited_sender(rx: Receiver<(String, SocketAddrV4)>) {
-    for (message, addr) in rx {
-        println!("SENDING STRING: {}", message);
-        let stream = TcpStream::connect(addr).unwrap();
-        send_string(message, stream);
-        let t = 2000;
-        println!("LIMITER WAITING {} ms.", t);
-        std::thread::sleep(std::time::Duration::from_millis(t));
-        println!("LIMITER READY!");
-    }
-}
-
 pub fn send_to_node(addr: SocketAddrV4, message: String, tx: Sender<(String, SocketAddrV4)>) {
     tx.send((message, addr)).unwrap();
 }
