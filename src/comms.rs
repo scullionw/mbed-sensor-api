@@ -12,17 +12,20 @@ pub fn node_listener(addr: SocketAddrV4, response_map: ResponseMap, sensor_list:
     for stream in listener.incoming() {
         let data = read_string(stream.unwrap());
         println!("RECEIVED STRING: {:?}", data);
-        let message: SensorMessage = serde_json::from_str(&data).unwrap();
-        match message.request_type {
-            RequestType::Discovery => {
-                let mut sensor_list = sensor_list.lock().unwrap();
-                sensor_list.insert(message.sensor());
-            }
-            _ => {
-                if let Some(tx) = response_map.lock().unwrap().remove(&message.id()) {
-                    tx.send(data).unwrap()
+        if let Ok(message) = serde_json::from_str::<SensorMessage>(&data) {
+            match message.request_type {
+                RequestType::Discovery => {
+                    let mut sensor_list = sensor_list.lock().unwrap();
+                    sensor_list.insert(message.sensor());
+                }
+                _ => {
+                    if let Some(tx) = response_map.lock().unwrap().remove(&message.id()) {
+                        tx.send(data).unwrap()
+                    }
                 }
             }
+        } else {
+            println!("Parse error! continuing..");
         }
     }
 }

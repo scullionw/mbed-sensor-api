@@ -21,9 +21,7 @@ struct SensorMemory {
 
 impl SensorMemory {
     fn new(sensor_value: String) -> SensorMemory {
-        SensorMemory {
-            sensor_value,
-        }
+        SensorMemory { sensor_value }
     }
 }
 
@@ -55,14 +53,10 @@ fn mock_fixed_node_receiver(addr: SocketAddrV4, tx: Sender<String>, sensor_list:
     for s in &*sensor_list.lock().unwrap() {
         let sensor = s.clone();
         let mem = match sensor.sensor_type {
-            SensorType::Thermometer |
-            SensorType::Thermostat => SensorMemory::new("23".to_owned()),
-            _ => SensorMemory::new("Off".to_owned())
+            SensorType::Thermometer | SensorType::Thermostat => SensorMemory::new("23".to_owned()),
+            _ => SensorMemory::new("Off".to_owned()),
         };
-        memory_map.insert(
-            sensor,
-            mem
-        );
+        memory_map.insert(sensor, mem);
     }
 
     let listener = TcpListener::bind(addr).unwrap();
