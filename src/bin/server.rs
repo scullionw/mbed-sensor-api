@@ -12,11 +12,13 @@ use sensor_api::timeseries::Year;
 use sensor_api::ResponseMap;
 use sensor_api::SensorList;
 use std::collections::{HashMap, HashSet};
+use std::net::SocketAddrV4;
+use std::net::TcpStream;
 use std::sync::mpsc::{channel, Receiver, Sender};
 use std::sync::{Arc, Mutex};
 use std::thread;
-use std::net::SocketAddrV4;
-use std::net::TcpStream;
+
+pub type Xmitter = Arc<Mutex<Sender<(String, SocketAddrV4)>>>;
 
 lazy_static! {
     static ref CONF: LinkConfig = LinkConfig::from_toml("Nodelink.toml");
@@ -32,8 +34,6 @@ pub fn rate_limited_sender(rx: Receiver<(String, SocketAddrV4)>) {
         println!("LIMITER READY!");
     }
 }
-
-pub type Xmitter = Arc<Mutex<Sender<(String, SocketAddrV4)>>>;
 
 fn validate_and_channel(
     message: &SensorMessage,
@@ -56,14 +56,18 @@ fn read_sensor(
     sensor: Form<Sensor>,
     map: State<ResponseMap>,
     sensor_list: State<SensorList>,
-    xmit: State<Xmitter>
+    xmit: State<Xmitter>,
 ) -> Option<Json<SensorMessage>> {
     let sensor = sensor.into_inner();
     let message = SensorMessage::get(sensor);
     match validate_and_channel(&message, &*map, &*sensor_list) {
         Some(rx) => {
             let xmit = (*xmit.lock().unwrap()).clone();
-            comms::send_to_node(CONF.node().addr(), serde_json::to_string(&message).unwrap(), xmit);
+            comms::send_to_node(
+                CONF.node().addr(),
+                serde_json::to_string(&message).unwrap(),
+                xmit,
+            );
             let response = rx.recv().unwrap();
             let message = serde_json::from_str(&response).unwrap();
             Some(Json(message))
@@ -77,14 +81,18 @@ fn set_sensor(
     input: Json<SensorMessage>,
     map: State<ResponseMap>,
     sensor_list: State<SensorList>,
-    xmit: State<Xmitter>
+    xmit: State<Xmitter>,
 ) -> Option<Json<SensorMessage>> {
     let message = input.into_inner();
     match validate_and_channel(&message, &*map, &*sensor_list) {
         Some(rx) => match message.request_type {
             RequestType::Set => {
                 let xmit = (*xmit.lock().unwrap()).clone();
-                comms::send_to_node(CONF.node().addr(), serde_json::to_string(&message).unwrap(), xmit);
+                comms::send_to_node(
+                    CONF.node().addr(),
+                    serde_json::to_string(&message).unwrap(),
+                    xmit,
+                );
                 let response = rx.recv().unwrap();
                 let message = serde_json::from_str(&response).unwrap();
                 Some(Json(message))
@@ -101,13 +109,17 @@ fn set_as_get_sensor(
     sensor: Form<Sensor>,
     map: State<ResponseMap>,
     sensor_list: State<SensorList>,
-    xmit: State<Xmitter>
+    xmit: State<Xmitter>,
 ) -> Option<Json<SensorMessage>> {
     let message = SensorMessage::set(sensor.into_inner(), set_val);
     match validate_and_channel(&message, &*map, &*sensor_list) {
         Some(rx) => {
             let xmit = (*xmit.lock().unwrap()).clone();
-            comms::send_to_node(CONF.node().addr(), serde_json::to_string(&message).unwrap(), xmit);
+            comms::send_to_node(
+                CONF.node().addr(),
+                serde_json::to_string(&message).unwrap(),
+                xmit,
+            );
             let response = rx.recv().unwrap();
             let message = serde_json::from_str(&response).unwrap();
             Some(Json(message))
