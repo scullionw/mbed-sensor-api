@@ -13,7 +13,7 @@ pub struct LinkConfig {
 
 #[derive(Deserialize, Debug)]
 pub struct Limiter {
-    time: u64
+    time: u64,
 }
 
 #[derive(Deserialize, Debug)]

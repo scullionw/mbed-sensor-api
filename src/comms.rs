@@ -6,6 +6,7 @@ use std::io::prelude::*;
 use std::net::SocketAddrV4;
 use std::net::TcpListener;
 use std::net::TcpStream;
+use std::sync::mpsc::Sender;
 
 pub fn node_listener(addr: SocketAddrV4, response_map: ResponseMap, sensor_list: SensorList) {
     let listener = TcpListener::bind(addr).unwrap();
@@ -29,8 +30,6 @@ pub fn node_listener(addr: SocketAddrV4, response_map: ResponseMap, sensor_list:
         }
     }
 }
-
-use std::sync::mpsc::{Sender, Receiver};
 
 pub fn send_to_node(addr: SocketAddrV4, message: String, tx: Sender<(String, SocketAddrV4)>) {
     tx.send((message, addr)).unwrap();
